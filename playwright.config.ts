@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+
+// BASE_URL, TEST_USERNAME and TEST_PASSWORD live in the gitignored env file, not in specs
+dotenv.config({ path: '.env/.demo.env' });
 
 export default defineConfig({
   testDir: './tests',
@@ -7,7 +11,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [['html', { open: 'never' }], ['list']],
-  timeout: 30_000,
+  timeout: 60_000, // Measured: QA-101 runs 22–30s on the shared demo and timed out at 30s on chromium and webkit
   expect: { timeout: 10_000 },
 
   use: {

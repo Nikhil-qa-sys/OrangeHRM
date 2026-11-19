@@ -6,3 +6,4 @@ playwright/.cache/
 .env
 .DS_Store
 .env.example
+.playwright-cli/
