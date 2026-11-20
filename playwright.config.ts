@@ -17,7 +17,8 @@ export default defineConfig({
   use: {
     baseURL: process.env.BASE_URL ?? 'https://opensource-demo.orangehrmlive.com',
     browserName: 'chromium',
-    headless: false,
+    // Headed locally so a run can be watched; CI runners have no display
+    headless: !!process.env.CI,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
