@@ -32,7 +32,12 @@ const qaTestData = {
       stateProvince: 'Maharashtra',
       zipPostalCode: '411001',
       country: 'India',
-      emailDomain: 'example.com',
+      homePhone: '0201234567',
+      mobilePhone: '9876543210',
+      workPhone: '0207654321',
+      // Work Email must not belong to another employee, so it is specific to this case and environment
+      workEmail: 'qa.qa101.work@example.com',
+      otherEmail: 'qa.qa101.other@example.com',
     },
   },
 }
@@ -66,7 +71,12 @@ const rcTestData: typeof qaTestData = {
       stateProvince: 'Maharashtra',
       zipPostalCode: '411001',
       country: 'India',
-      emailDomain: 'example.com',
+      homePhone: '0201234567',
+      mobilePhone: '9876543210',
+      workPhone: '0207654321',
+      // Work Email must not belong to another employee, so it is specific to this case and environment
+      workEmail: 'rc.qa101.work@example.com',
+      otherEmail: 'rc.qa101.other@example.com',
     },
   },
 }
@@ -100,7 +110,12 @@ const regressionTestData: typeof qaTestData = {
       stateProvince: 'Maharashtra',
       zipPostalCode: '411001',
       country: 'India',
-      emailDomain: 'example.com',
+      homePhone: '0201234567',
+      mobilePhone: '9876543210',
+      workPhone: '0207654321',
+      // Work Email must not belong to another employee, so it is specific to this case and environment
+      workEmail: 'reg.qa101.work@example.com',
+      otherEmail: 'reg.qa101.other@example.com',
     },
   },
 }

@@ -1,24 +1,5 @@
-import { type Locator, type Page } from '@playwright/test'
-import { faker } from '@faker-js/faker'
+import {  Locator, Page } from '@playwright/test'
 import { chooseDropdownOption, labelledField } from '../../helpers/methods'
-
-export type ContactDetailsData = {
-  street1: string
-  street2: string
-  city: string
-  stateProvince: string
-  zipPostalCode: string
-  country: string
-  emailDomain: string
-}
-
-export type ContactDetails = ContactDetailsData & {
-  homePhone: string
-  mobilePhone: string
-  workPhone: string
-  workEmail: string
-  otherEmail: string
-}
 
 export class ContactDetailsPage {
   public readonly heading: Locator
@@ -72,30 +53,27 @@ export class ContactDetailsPage {
     )
   }
 
-  async updateContactDetails(data: ContactDetailsData): Promise<ContactDetails> {
-    // Work Email must be unique across employees, and Other Email must differ from it
-    const emailName = faker.string.alphanumeric(10).toLowerCase()
-    const details: ContactDetails = {
-      ...data,
-      homePhone: faker.string.numeric(10),
-      mobilePhone: faker.string.numeric(10),
-      workPhone: faker.string.numeric(10),
-      workEmail: `${emailName}.work@${data.emailDomain}`,
-      otherEmail: `${emailName}.other@${data.emailDomain}`,
-    }
+  async fillAddress(street1: string, street2: string, city: string, stateProvince: string, zipPostalCode: string, country: string) {
+    await this.street1Input.fill(street1)
+    await this.street2Input.fill(street2)
+    await this.cityInput.fill(city)
+    await this.stateProvinceInput.fill(stateProvince)
+    await this.zipPostalCodeInput.fill(zipPostalCode)
+    await chooseDropdownOption(this.page, this.countrySelect, country)
+  }
 
-    await this.street1Input.fill(details.street1)
-    await this.street2Input.fill(details.street2)
-    await this.cityInput.fill(details.city)
-    await this.stateProvinceInput.fill(details.stateProvince)
-    await this.zipPostalCodeInput.fill(details.zipPostalCode)
-    await chooseDropdownOption(this.page, this.countrySelect, details.country)
-    await this.homePhoneInput.fill(details.homePhone)
-    await this.mobilePhoneInput.fill(details.mobilePhone)
-    await this.workPhoneInput.fill(details.workPhone)
-    await this.workEmailInput.fill(details.workEmail)
-    await this.otherEmailInput.fill(details.otherEmail)
+  async fillTelephones(homePhone: string, mobilePhone: string, workPhone: string) {
+    await this.homePhoneInput.fill(homePhone)
+    await this.mobilePhoneInput.fill(mobilePhone)
+    await this.workPhoneInput.fill(workPhone)
+  }
+
+  async fillEmails(workEmail: string, otherEmail: string) {
+    await this.workEmailInput.fill(workEmail)
+    await this.otherEmailInput.fill(otherEmail)
+  }
+
+  async saveContactDetails() {
     await this.saveButton.click()
-    return details
   }
 }

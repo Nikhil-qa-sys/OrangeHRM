@@ -9,13 +9,15 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: process.env.CI ? 1 : 1,
   reporter: [['html', { open: 'never' }], ['list']],
   timeout: 60_000, // Measured: QA-101 runs 22–30s on the shared demo and timed out at 30s on chromium and webkit
   expect: { timeout: 10_000 },
 
   use: {
     baseURL: process.env.BASE_URL ?? 'https://opensource-demo.orangehrmlive.com',
+    browserName: 'chromium',
+    headless: false,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

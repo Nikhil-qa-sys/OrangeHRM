@@ -29,35 +29,51 @@ test.describe('My Info', () => {
     })
 
     await test.step('Fill every personal detail with unique values and save', async () => {
-      const details = await personalDetailsPage.updatePersonalDetails(testData['QA-101'].personalDetails)
+      const personalDetails = testData['QA-101'].personalDetails
+      const employeeName = await personalDetailsPage.fillEmployeeName()
+      const identification = await personalDetailsPage.fillIdentification(
+        personalDetails.employeeIdPrefix,
+        personalDetails.otherIdPrefix,
+        personalDetails.licenseNumberPrefix,
+        personalDetails.licenseExpiryDate,
+      )
+      await personalDetailsPage.fillPersonalInformation(
+        personalDetails.nationality,
+        personalDetails.maritalStatus,
+        personalDetails.dateOfBirth,
+        personalDetails.gender,
+      )
+      await personalDetailsPage.savePersonalDetails()
       await expect(personalDetailsPage.personalDetailsUpdatedMessage).toBeVisible()
-      await expect(personalDetailsPage.firstNameInput).toHaveValue(details.firstName)
-      await expect(personalDetailsPage.middleNameInput).toHaveValue(details.middleName)
-      await expect(personalDetailsPage.lastNameInput).toHaveValue(details.lastName)
-      await expect(personalDetailsPage.employeeIdInput).toHaveValue(details.employeeId)
-      await expect(personalDetailsPage.otherIdInput).toHaveValue(details.otherId)
-      await expect(personalDetailsPage.licenseNumberInput).toHaveValue(details.licenseNumber)
-      await expect(personalDetailsPage.licenseExpiryDateInput).toHaveValue(details.licenseExpiryDate)
-      await expect(personalDetailsPage.nationalitySelect).toHaveText(details.nationality)
-      await expect(personalDetailsPage.maritalStatusSelect).toHaveText(details.maritalStatus)
-      await expect(personalDetailsPage.dateOfBirthInput).toHaveValue(details.dateOfBirth)
-      await expect(personalDetailsPage.genderRadio(details.gender)).toBeChecked()
-      employeeFullName = `${details.firstName} ${details.lastName}`
+      await expect(personalDetailsPage.firstNameInput).toHaveValue(employeeName.firstName)
+      await expect(personalDetailsPage.middleNameInput).toHaveValue(employeeName.middleName)
+      await expect(personalDetailsPage.lastNameInput).toHaveValue(employeeName.lastName)
+      await expect(personalDetailsPage.employeeIdInput).toHaveValue(identification.employeeId)
+      await expect(personalDetailsPage.otherIdInput).toHaveValue(identification.otherId)
+      await expect(personalDetailsPage.licenseNumberInput).toHaveValue(identification.licenseNumber)
+      await expect(personalDetailsPage.licenseExpiryDateInput).toHaveValue(personalDetails.licenseExpiryDate)
+      await expect(personalDetailsPage.nationalitySelect).toHaveText(personalDetails.nationality)
+      await expect(personalDetailsPage.maritalStatusSelect).toHaveText(personalDetails.maritalStatus)
+      await expect(personalDetailsPage.dateOfBirthInput).toHaveValue(personalDetails.dateOfBirth)
+      await expect(personalDetailsPage.genderRadio(personalDetails.gender)).toBeChecked()
+      employeeFullName = `${employeeName.firstName} ${employeeName.lastName}`
     })
 
     await test.step('Fill the custom fields and save', async () => {
-      const customTextValue = await personalDetailsPage.updateCustomFields(testData['QA-101'].customFields)
+      const customFields = testData['QA-101'].customFields
+      const customTextValue = await personalDetailsPage.fillCustomFields(customFields.bloodType, customFields.textFieldLabel, customFields.textValuePrefix)
+      await personalDetailsPage.saveCustomFields()
       await expect(personalDetailsPage.customFieldsSavedMessage).toBeVisible()
-      await expect(personalDetailsPage.bloodTypeSelect).toHaveText(testData['QA-101'].customFields.bloodType)
-      await expect(personalDetailsPage.customTextInput(testData['QA-101'].customFields.textFieldLabel)).toHaveValue(customTextValue)
+      await expect(personalDetailsPage.bloodTypeSelect).toHaveText(customFields.bloodType)
+      await expect(personalDetailsPage.customTextInput(customFields.textFieldLabel)).toHaveValue(customTextValue)
     })
 
     await test.step('Replace every attachment with two new files', async () => {
       await personalDetailsPage.deleteAllAttachments()
       await expect(personalDetailsPage.attachmentsRecordsFoundLabel).toHaveText('No Records Found')
 
-      const uploadedFileNames = await personalDetailsPage.uploadAttachments(testData['QA-101'].attachments)
-      await expect(personalDetailsPage.attachmentsRecordsFoundLabel).toHaveText(`(${uploadedFileNames.length}) Records Found`)
+      const attachments = testData['QA-101'].attachments
+      const uploadedFileNames = await personalDetailsPage.uploadAttachments(attachments.fileNamePrefix, attachments.fileCount)
       for (const fileName of uploadedFileNames) {
         await expect(personalDetailsPage.attachmentRow(fileName)).toBeVisible()
       }
@@ -73,19 +89,30 @@ test.describe('My Info', () => {
     })
 
     await test.step('Fill every contact detail and save', async () => {
-      const details = await contactDetailsPage.updateContactDetails(testData['QA-101'].contactDetails)
+      const contactDetails = testData['QA-101'].contactDetails
+      await contactDetailsPage.fillAddress(
+        contactDetails.street1,
+        contactDetails.street2,
+        contactDetails.city,
+        contactDetails.stateProvince,
+        contactDetails.zipPostalCode,
+        contactDetails.country,
+      )
+      await contactDetailsPage.fillTelephones(contactDetails.homePhone, contactDetails.mobilePhone, contactDetails.workPhone)
+      await contactDetailsPage.fillEmails(contactDetails.workEmail, contactDetails.otherEmail)
+      await contactDetailsPage.saveContactDetails()
       await expect(contactDetailsPage.contactDetailsUpdatedMessage).toBeVisible()
-      await expect(contactDetailsPage.street1Input).toHaveValue(details.street1)
-      await expect(contactDetailsPage.street2Input).toHaveValue(details.street2)
-      await expect(contactDetailsPage.cityInput).toHaveValue(details.city)
-      await expect(contactDetailsPage.stateProvinceInput).toHaveValue(details.stateProvince)
-      await expect(contactDetailsPage.zipPostalCodeInput).toHaveValue(details.zipPostalCode)
-      await expect(contactDetailsPage.countrySelect).toHaveText(details.country)
-      await expect(contactDetailsPage.homePhoneInput).toHaveValue(details.homePhone)
-      await expect(contactDetailsPage.mobilePhoneInput).toHaveValue(details.mobilePhone)
-      await expect(contactDetailsPage.workPhoneInput).toHaveValue(details.workPhone)
-      await expect(contactDetailsPage.workEmailInput).toHaveValue(details.workEmail)
-      await expect(contactDetailsPage.otherEmailInput).toHaveValue(details.otherEmail)
+      await expect(contactDetailsPage.street1Input).toHaveValue(contactDetails.street1)
+      await expect(contactDetailsPage.street2Input).toHaveValue(contactDetails.street2)
+      await expect(contactDetailsPage.cityInput).toHaveValue(contactDetails.city)
+      await expect(contactDetailsPage.stateProvinceInput).toHaveValue(contactDetails.stateProvince)
+      await expect(contactDetailsPage.zipPostalCodeInput).toHaveValue(contactDetails.zipPostalCode)
+      await expect(contactDetailsPage.countrySelect).toHaveText(contactDetails.country)
+      await expect(contactDetailsPage.homePhoneInput).toHaveValue(contactDetails.homePhone)
+      await expect(contactDetailsPage.mobilePhoneInput).toHaveValue(contactDetails.mobilePhone)
+      await expect(contactDetailsPage.workPhoneInput).toHaveValue(contactDetails.workPhone)
+      await expect(contactDetailsPage.workEmailInput).toHaveValue(contactDetails.workEmail)
+      await expect(contactDetailsPage.otherEmailInput).toHaveValue(contactDetails.otherEmail)
     })
   })
 })

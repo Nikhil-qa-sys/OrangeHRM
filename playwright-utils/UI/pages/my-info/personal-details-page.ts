@@ -2,37 +2,6 @@ import { type Locator, type Page } from '@playwright/test'
 import { faker } from '@faker-js/faker'
 import { chooseDropdownOption, labelledField } from '../../helpers/methods'
 
-export type PersonalDetailsData = {
-  employeeIdPrefix: string
-  otherIdPrefix: string
-  licenseNumberPrefix: string
-  licenseExpiryDate: string
-  nationality: string
-  maritalStatus: string
-  dateOfBirth: string
-  gender: 'Male' | 'Female'
-}
-
-export type PersonalDetails = PersonalDetailsData & {
-  firstName: string
-  middleName: string
-  lastName: string
-  employeeId: string
-  otherId: string
-  licenseNumber: string
-}
-
-export type CustomFieldsData = {
-  bloodType: string
-  textFieldLabel: string
-  textValuePrefix: string
-}
-
-export type AttachmentsData = {
-  fileNamePrefix: string
-  fileCount: number
-}
-
 export class PersonalDetailsPage {
   public readonly heading: Locator
   public readonly contactDetailsTab: Locator
@@ -134,39 +103,50 @@ export class PersonalDetailsPage {
     await Promise.all([loaded('/personal-details'), loaded('/custom-fields'), loaded('/attachments')])
   }
 
-  async updatePersonalDetails(data: PersonalDetailsData): Promise<PersonalDetails> {
-    // Employee Id is unique across the directory and capped at 10 characters
-    const details: PersonalDetails = {
-      ...data,
-      firstName: faker.person.firstName(),
-      middleName: faker.person.middleName(),
-      lastName: faker.person.lastName(),
-      employeeId: `${data.employeeIdPrefix}${faker.string.numeric(10 - data.employeeIdPrefix.length)}`,
-      otherId: `${data.otherIdPrefix}${faker.string.alphanumeric(8).toUpperCase()}`,
-      licenseNumber: `${data.licenseNumberPrefix}${faker.string.numeric(8)}`,
-    }
-
-    await this.firstNameInput.fill(details.firstName)
-    await this.middleNameInput.fill(details.middleName)
-    await this.lastNameInput.fill(details.lastName)
-    await this.employeeIdInput.fill(details.employeeId)
-    await this.otherIdInput.fill(details.otherId)
-    await this.licenseNumberInput.fill(details.licenseNumber)
-    await this.licenseExpiryDateInput.fill(details.licenseExpiryDate)
-    await chooseDropdownOption(this.page, this.nationalitySelect, details.nationality)
-    await chooseDropdownOption(this.page, this.maritalStatusSelect, details.maritalStatus)
-    await this.dateOfBirthInput.fill(details.dateOfBirth)
-    await this.genderOption(details.gender).click()
-    await this.personalDetailsSaveButton.click()
-    return details
+  // Names are random so every run saves values that differ from the last one
+  async fillEmployeeName() {
+    const firstName = faker.person.firstName()
+    const middleName = faker.person.middleName()
+    const lastName = faker.person.lastName()
+    await this.firstNameInput.fill(firstName)
+    await this.middleNameInput.fill(middleName)
+    await this.lastNameInput.fill(lastName)
+    return { firstName, middleName, lastName }
   }
 
-  async updateCustomFields(data: CustomFieldsData): Promise<string> {
-    const textValue = `${data.textValuePrefix}${faker.string.numeric(6)}`
-    await chooseDropdownOption(this.page, this.bloodTypeSelect, data.bloodType)
-    await this.customTextInput(data.textFieldLabel).fill(textValue)
-    await this.customFieldsSaveButton.click()
+  // Employee Id is unique across the directory and capped at 10 characters, so the
+  // data holds a prefix and the run completes it; the other ids follow the same pattern
+  async fillIdentification(employeeIdPrefix: string, otherIdPrefix: string, licenseNumberPrefix: string, licenseExpiryDate: string) {
+    const employeeId = `${employeeIdPrefix}${faker.string.numeric(10 - employeeIdPrefix.length)}`
+    const otherId = `${otherIdPrefix}${faker.string.alphanumeric(8).toUpperCase()}`
+    const licenseNumber = `${licenseNumberPrefix}${faker.string.numeric(8)}`
+    await this.employeeIdInput.fill(employeeId)
+    await this.otherIdInput.fill(otherId)
+    await this.licenseNumberInput.fill(licenseNumber)
+    await this.licenseExpiryDateInput.fill(licenseExpiryDate)
+    return { employeeId, otherId, licenseNumber }
+  }
+
+  async fillPersonalInformation(nationality: string, maritalStatus: string, dateOfBirth: string, gender: string) {
+    await chooseDropdownOption(this.page, this.nationalitySelect, nationality)
+    await chooseDropdownOption(this.page, this.maritalStatusSelect, maritalStatus)
+    await this.dateOfBirthInput.fill(dateOfBirth)
+    await this.genderOption(gender).click()
+  }
+
+  async savePersonalDetails() {
+    await this.personalDetailsSaveButton.click()
+  }
+
+  async fillCustomFields(bloodType: string, textFieldLabel: string, textValuePrefix: string) {
+    const textValue = `${textValuePrefix}${faker.string.numeric(6)}`
+    await chooseDropdownOption(this.page, this.bloodTypeSelect, bloodType)
+    await this.customTextInput(textFieldLabel).fill(textValue)
     return textValue
+  }
+
+  async saveCustomFields() {
+    await this.customFieldsSaveButton.click()
   }
 
   attachmentRow(fileName: string): Locator {
@@ -185,10 +165,10 @@ export class PersonalDetailsPage {
     await this.confirmDeleteButton.click()
   }
 
-  async uploadAttachments(data: AttachmentsData): Promise<string[]> {
+  async uploadAttachments(fileNamePrefix: string, fileCount: number) {
     const fileNames: string[] = []
-    for (let index = 0; index < data.fileCount; index++) {
-      const fileName = `${data.fileNamePrefix}${faker.string.alphanumeric(8)}.txt`
+    for (let index = 0; index < fileCount; index++) {
+      const fileName = `${fileNamePrefix}${faker.string.alphanumeric(8)}.txt`
       // The Add button only exists while the add form is closed, so it also waits out the previous save
       await this.addAttachmentButton.click()
       await this.attachmentFileInput.setInputFiles({
