@@ -12,10 +12,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "noEmit": true,
-    "types": ["node"],
-    "paths": {
-      "@pages/*": ["./pages/*"]
-    }
+    "types": ["node"]
   },
-  "include": ["tests/**/*.ts", "pages/**/*.ts", "playwright-utils/**/*.ts", "playwright.config.ts"]
+  "include": ["tests/**/*.ts", "playwright-utils/**/*.ts", "playwright.config.ts"]
 }
