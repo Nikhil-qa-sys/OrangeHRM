@@ -11,9 +11,10 @@ endpoint and payload is established against the live app ("Mode B" in the rules)
 ## Commands
 
 ```bash
-npm test                                   # all specs, all browser projects
-npx playwright test tests/login.spec.ts --project=chromium   # one file, one browser
-npx playwright test -g "QA-01"             # one case by its id in the title
+npm test                                   # every project: api + chromium/firefox/webkit
+npx playwright test --project=api          # the API half only (tests/API/**)
+npx playwright test tests/UI/my-info/my-info.spec.ts --project=chromium   # one file, one browser
+npx playwright test -g "QA-301" --project=api   # one case by its id in the title
 npm run headed | npm run debug | npm run ui
 npm run codegen                            # record against $BASE_URL
 npm run report                             # open the last HTML report
@@ -25,12 +26,12 @@ passed against the live app is still a draft.
 
 ## Environment
 
-- `playwright.config.ts` reads `BASE_URL`, and `tests/login.spec.ts` reads `APP_USERNAME` and
-  `APP_PASSWORD`. Each one falls back to the demo defaults.
-- **`dotenv` is not installed and nothing loads `.env`.** The `.env` file at the root does
-  nothing unless its variables are exported in the shell. The rules describe a `.env/.env.<env>`
-  directory selected by `TEST_ENV`. That setup does not exist yet.
-- The `@pages/*` path alias (in `tsconfig.json`) maps to `./pages/*`.
+- `playwright.config.ts` loads `.env/.demo.env` with dotenv. That file (gitignored) holds
+  `BASE_URL`, `TEST_USERNAME` and `TEST_PASSWORD`. UI specs read the credentials from
+  `process.env`, and the API fixtures (`credentials`, `authContext`) do the same.
+- The env file path is hardcoded. `TEST_ENV` does **not** select it, unlike the
+  `.env/.env.<env>` setup the rules describe. `TEST_ENV` (default `qa`) only selects which object
+  each `test-data/*.data.ts` file exports (`qa` / `rc` / `regression`).
 
 ## Rules and skills: the target architecture vs. what exists today
 
@@ -45,22 +46,49 @@ Project skills (`.claude/skills/`): `pw-new-test-cli` (new UI test from live-DOM
 `pw-new-api-test` (new API test), `pw-test-audit` (review recent test changes). Use them for those
 tasks, and never skip their `AskUserQuestion` steps.
 
-**The rules describe a layout that the repo has not grown into yet.** The rules and skills were
-adapted from another project, so their examples name ResMan/buildings/properties. Treat those
-examples as patterns, not as OrangeHRM facts. What the repo actually holds today:
+The rules and skills were adapted from another project, so their examples name
+ResMan/buildings/properties. Treat those examples as patterns, not as OrangeHRM facts.
 
-| Rules expect | Currently |
-|---|---|
-| `tests/UI/<area>/*.spec.ts`, `tests/API/<area>/*.api.spec.ts` | `tests/login.spec.ts` (flat) |
-| `playwright-utils/UI/pages/<area>/<name>-page.ts` | `pages/login.page.ts` |
-| `api` project (`testMatch: /API\/.*\.spec\.ts/`), browser projects matching `/UI\/.*\.spec\.ts/` | chromium/firefox/webkit run everything under `tests/` |
-| No `expect()` in page objects | `LoginPage.expectLoaded()` asserts |
-| `<CASE-ID> \| <behavior>` titles, per-env test data keyed by case id | Titles have no case ids, and credentials are inline fallbacks |
-| `playwright-utils/API/**` (RequestHandler, fixtures, Ajv, faker v9) | Not present (no ajv/faker/dotenv deps) |
+### Layout today
 
-When you add new work, follow the rules, which means migrating to the `UI/`/`API/` split. Scaffold
-the missing pieces (directories, config projects, dependencies) in the same change that first
-needs them. Do not extend the legacy flat layout.
+The repo follows the rules' `UI/`/`API/` split:
+
+```
+tests/UI/<area>/*.spec.ts            # my-info (QA-101), recruitment (QA-201)
+tests/API/<area>/*.api.spec.ts       # auth/login (QA-301, QA-302)
+playwright-utils/UI/                 # pages/<area>/, helpers/, test-data/
+playwright-utils/API/                # api-config, core/, fixtures/, clients/<area>/,
+                                     # helpers/, response-schemas/, test-data/
+```
+
+- `playwright.config.ts` has an `api` project (`testMatch: /API\/.*\.spec\.ts/`,
+  `fullyParallel: false`), and chromium, firefox and webkit match `/UI\/.*\.spec\.ts/` only.
+- Case ids are grouped by area in blocks of one hundred: QA-1xx My Info, QA-2xx Recruitment,
+  QA-3xx Auth (API). A new area takes the next free hundred.
+- Dependencies are in place: `dotenv`, `@faker-js/faker` v9 and `ajv`.
+- Some pieces the rules describe don't exist yet: API `request-objects/` and
+  `helpers/data-generator.ts`, UI `fixtures/` and `timeouts/`. Create each one in the change that
+  first needs it.
+
+### Where the API half differs from the rules (OrangeHRM-specific)
+
+The rules assume ResMan's token/OIDC sign-in. OrangeHRM is different, and the code reflects that:
+
+- **The session is a cookie (`orangehrm`), not a token.** Sign-in is
+  `GET /web/index.php/auth/login` (200 HTML, CSRF token in the `<auth-login :token>` prop), then
+  a form `POST /web/index.php/auth/validate` (`_token`, `username`, `password`). That POST
+  answers 302 for both outcomes, so after the redirect is followed the status is 200 either
+  way. `AuthApi.login()` reads the landing page to report `signedIn` and `errorMessage`.
+- `RequestHandler` has no auth header to inject and no `clearAuth()`. For an unauthenticated
+  call, use the `guestApi` fixture (a fresh, never-signed-in cookie jar per test). The `api`
+  fixture is signed in through the worker-scoped `authContext`.
+- `AuthApi` takes a `RequestHandler` (as in the pw-api-testing reference project), not a raw
+  `APIRequestContext`, so the sign-in calls are logged too.
+- There is no `X-Requested-With` injection. OrangeHRM doesn't need it.
+- Pages are Vue components with server-rendered props of HTML-escaped JSON.
+  `helpers/html-form.ts` (`readComponentProp`) reads them, scoped to the component's tag.
+- REST endpoints live under `/web/index.php/api/v2/` and answer JSON. Without a session they
+  answer `401 {"error":{"message":"Session expired"}}`.
 
 ## Key cross-cutting points (details in the rules files)
 

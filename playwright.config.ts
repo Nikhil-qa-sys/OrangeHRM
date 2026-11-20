@@ -26,8 +26,11 @@ export default defineConfig({
   },
 
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
-    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+    // API specs hit the shared demo through one signed-in session per worker; running a
+    // file fully parallel would split it across workers and sign in once per worker
+    { name: 'api', testMatch: /API\/.*\.spec\.ts/, fullyParallel: false },
+    { name: 'chromium', testMatch: /UI\/.*\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', testMatch: /UI\/.*\.spec\.ts/, use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', testMatch: /UI\/.*\.spec\.ts/, use: { ...devices['Desktop Safari'] } },
   ],
 });
